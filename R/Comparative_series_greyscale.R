@@ -1,129 +1,11 @@
 ## Trend analysis on SOTU corpus for book chapter
 ##
 ##
-devtools::install_github("kbenoit/quanteda", force = T ) 
-
-devtools::install_github("kbenoit/sophistication", 
-                         subdir = "R_package",
-                         auth_token = "309171976db5586eab402a922604229cd5190c81")
-library(sophistication)
-library(quanteda)
-library(magrittr)
-# sets to each user's Dropbox root folder for the project
-setwd(getOption("ROOT_DROPBOX"))
-
-# library(devtools)
-# library(quanteda)
-# library(Rcpp)
-# library(quantedaData)
-# library(trend)
-library(dplyr)
- library(stringi)
-library(stringr)
-
-# devtools::install_github("kbenoit/quantedaData")
-# setwd("C:/Users/kevin/Dropbox/Benoit_Spirling_Readability/")
-
-
-data("data_corpus_SOTU")
-
-## readability for SOTU texts
-measure <- "Flesch"
-#measure <- "meanSentenceLength"
-#measure <- "meanWordSyllables"
-
-
-SOTU_stat <- textstat_readability(data_corpus_SOTU, measure)
-
-SOTU_year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
-SOTU_df <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat)
-plot(SOTU_df)
-
-###EO
-
-
-load("data_text/executive_orders/data_corpus_eo.rdata")
-
-
-#drop the ones that are empty
-empty <- which( nchar(data_corpus_eo$documents$texts)==0 )
-clean1 <- data_corpus_eo$documents[-empty, c(1:2)]
-
-##problems
-clean1$texts<-stri_replace_all_fixed(clean1$texts, "A. D.", "AD")
-
-#clean1$texts<-stri_replace_all_regex(clean1$texts, " ([A-z])\\.", "")
-#clean1$texts<-stri_replace_all_regex(clean1$texts, "\\.  ([0-9])\\.", "")
-
-
-
-
-#drop anything that's very long (95th percentile and above)
-quant95 <- which( nchar(clean1$texts) >
-                    quantile( nchar(clean1$texts), prob=.95) )
-clean2 <- clean1[-quant95, c(1:2)]
-
-
-
-
-
-eo_corp <- corpus(clean2, text_field = "texts")
-
-eo_corp <- corpus_trimsentences(eo_corp, min_length = 4)
-
-
-eo_corp <- corpus_subset(eo_corp, ntoken(eo_corp) > 10)
-
-
-eo_lengths<-ntoken(eo_corp, removePunct = T)
-summary(eo_lengths)
-summary(eo_year)
-eo_stat <- textstat_readability(eo_corp$documents$texts, measure)
-
-eo_year <- docvars(eo_corp)
-
-eo_df<-data.frame("year" = eo_year$Year, "eo_stat" = eo_stat)
-#eo_df<-filter(eo_df, eo_stat> -50)
-
-#eo_df<-filter(eo_df, eo_stat< 150)
-########SCOTUS
-data_dropbox(data_corpus_SCOTUS)
-#drop the ones that are empty
-clean1 <- corpus_subset(data_corpus_SCOTUS, nchar(texts(data_corpus_SCOTUS)) > 0)
-
-
-## implement fixes
-texts(clean1) <- stri_replace_all_fixed(texts(clean1), "U. S.", "US")
-
-
-
-#drop anything that's very long (95th percentile and above)
-#drop anything that's very long (95th percentile and above)
-temp_lengths <- stri_length(texts(clean1))
-clean2 <- corpus_subset(clean1, temp_lengths <quantile(temp_lengths, prob = .95))
-scotus_lengths<-ntoken(clean2, removePunct = T)
-summary(scotus_lengths)
-table(scotus_lengths)
-
-clean3 <- corpus_trimsentences(clean2, min_length = 4)
-
-
-
-
-
-scotus_stat <- textstat_readability(clean3$documents$texts, measure)
-
-
-scotus_year <- clean2$documents$Year
-sort(unique(scotus_year))
-scotus_df<-data.frame("year" = scotus_year, "scotus_stat" = scotus_stat)
-
-#scotus_df<-filter(scotus_df, scotus_stat> -50)
-
-#scotus_df<-filter(scotus_df, scotus_stat< 150)
 
 ########nobel
-load("data_text/NobelLitePresentations/data_corpus_nobel.rdata")
+#load("data_text/NobelLitePresentations/data_corpus_nobel.rdata")
+load("C:/Users/kevin/Desktop/data_corpus_nobel.rdata")
+
 
 temp_lengths <- stri_length(texts(data_corpus_nobel))
 data_corpus_nobel <- corpus_subset(data_corpus_nobel, temp_lengths < quantile(temp_lengths, prob = .95))
@@ -133,35 +15,37 @@ nobel_corp <- corpus_trimsentences(data_corpus_nobel, min_length = 4)
 
 
 nobel_lengths<-ntoken(nobel_corp, removePunct = T)
-summary(nobel_lengths)
-summary(nobel_year)
-nobel_stat <- textstat_readability(nobel_corp, measure)
 
-nobel_year <- docvars(nobel_corp)
 
-nobel_df<-data.frame("year" = nobel_year$year, "nobel_stat" = nobel_stat)
 
-#nobel_df<-filter(nobel_df, nobel_stat> -50)
 
-#nobel_df<-filter(nobel_df, nobel_stat< 150)
+
+
+nobel_stat <- textstat_readability(nobel_corp, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+
+nobel_year <- lubridate::year(docvars(data_corpus_nobel, "Date"))
+nobel_fre_df <- data.frame("year" = nobel_year, "nobel_stat" = nobel_stat$Flesch)
+nobel_fre_sent <- data.frame("year" = nobel_year, "nobel_stat" = nobel_stat$meanSentenceLength)
+nobel_fre_word <- data.frame("year" = nobel_year, "nobel_stat" = nobel_stat$meanWordSyllables)
+
+
+
 
 
 ########Party Broadcasts
-load("C:/Users/kevin/OneDrive/Documents/GitHub/sophistication/R_package/data/data_corpus_partybroadcasts.rdata")
 
+data("data_corpus_partybroadcasts")
 temp_lengths <- stri_length(texts(data_corpus_partybroadcasts))
 data_corpus_pb <- corpus_subset(data_corpus_partybroadcasts, temp_lengths < quantile(temp_lengths, prob = .95))
 
 pb_corp <- corpus_trimsentences(data_corpus_pb, min_length = 4)
 
 pb_lengths<-ntoken(pb_corp, removePunct = T)
-summary(pb_lengths)
-summary(pb_year)
 
-pb_stat <- textstat_readability(pb_corp, measure)
-
+###need to manually fix the dates
 xx<-substr(texts(pb_corp), 1, 30)
 xxx<-str_extract_all(xx,"\\(?[0-9,.]+\\)?")
+
 
 pb_year <- numeric()
 for(i in 1:length(xxx)){
@@ -175,15 +59,20 @@ pb_year[10]<-1970
 pb_year[14]<-1974
 pb_year[22]<-1979
 
-pb_df<-data.frame("year" = pb_year, "pb_stat" = pb_stat)
 
-#pb_df<-filter(pb_df, pb_stat> -50)
 
-#pb_df<-filter(pb_df, pb_stat< 150)
+pb_stat <- textstat_readability(pb_corp, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+
+
+pb_fre_df <- data.frame("year" = pb_year, "pb_stat" = pb_stat$Flesch)
+pb_fre_sent <- data.frame("year" = pb_year, "pb_stat" = pb_stat$meanSentenceLength)
+pb_fre_word <- data.frame("year" = pb_year, "pb_stat" = pb_stat$meanWordSyllables)
+
 
 
 ########UK Manifestos
-load("data_text/UK_manifestos/data_corpus_man.rdata")
+
+load("C:/Users/kevin/Desktop/data_corpus_man.rdata")
 
 temp_lengths <- stri_length(texts(data_corpus_man))
 data_corpus_man <- corpus_subset(data_corpus_man, temp_lengths < quantile(temp_lengths, prob = .95))
@@ -191,52 +80,26 @@ data_corpus_man <- corpus_subset(data_corpus_man, temp_lengths < quantile(temp_l
 
 man_corp <- corpus_trimsentences(data_corpus_man, min_length = 4)
 
-man_lengths<-ntoken(man_corp, removePunct = T)
-summary(man_lengths)
-summary(man_year)
+
+docvars(data_corpus_man)
 
 
+man_stat <- textstat_readability(man_corp, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
 
-#corp <- corpus(clean2$texts)
-
-
-man_stat <- textstat_readability(man_corp, measure)
-
-man_year <- docvars(man_corp)
-
-man_df<-data.frame("year" = man_year$Year, "man_stat" = man_stat)
-
-#man_df<-filter(man_df, man_stat> -50)
-
-#man_df<-filter(man_df, man_stat< 150)
+man_year <- (docvars(data_corpus_man, "Year"))
+man_fre_df <- data.frame("year" = man_year, "man_stat" = man_stat$Flesch)
+man_fre_sent <- data.frame("year" = man_year, "man_stat" = man_stat$meanSentenceLength)
+man_fre_word <- data.frame("year" = man_year, "man_stat" = man_stat$meanWordSyllables)
 
 
 
 ###combine all together
-##too many to plot well, and very unbalanced (way more modern ones)--try for a more balanced sample
-
-years<-unique(scotus_df$year)
-
-
-indices<-vector()
-for(i in 1:length(years)){
-  set<-which(scotus_df[,"year"]==years[i])
-  num<-min(length(set), 30)
-  samp<-sample(set, num, replace = FALSE)
-  indices<-c(indices, samp)
-}
-
-
-balanced_scotus_df<-scotus_df[indices,]
-
-
 
 
 require(reshape2)
 df1<-melt(list( SOTU=SOTU_df, 
               Nobel = nobel_df, 
-              Manifestos = man_df, Broadcasts = pb_df  , SCOTUS=balanced_scotus_df,
-              ExecOrders = eo_df     ), id.vars="year")
+              Manifestos = man_df, Broadcasts = pb_df    ), id.vars="year")
 
 
 

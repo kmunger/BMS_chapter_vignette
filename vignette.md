@@ -34,7 +34,7 @@ library(sophistication)
 ## loading 'sophistication'
 ## sophistication version 0.57
 ## Dropbox folder location set to: C:/Users/kevin/Dropbox/Benoit_Spirling_Readability/
-
+library(stringr)
 ## compute readability and bootstrap the sentences
 set.seed(20170308)
 results <- bootstrap_readability(data_corpus_SOTU, n = 2, measure = "Flesch", verbose = FALSE)
@@ -59,6 +59,12 @@ library(strucchange)
 ## 
 ## Loading required package: sandwich
 ## Warning: package 'sandwich' was built under R version 3.4.3
+## 
+## Attaching package: 'strucchange'
+## 
+## The following object is masked from 'package:stringr':
+## 
+##     boundary
 sotu_mean <- mean(stat)
 sotu_var <- var(stat)
 sotu_cs_test <- cs.test(stat)
@@ -241,7 +247,8 @@ eo_fre_word <- data.frame("year" = eo_year$Year, "eo_stat" = eo_stat$meanWordSyl
 
 
 ########SCOTUS
-load("C:/Users/kevin/Documents/GitHub/BMS_chapter_replication/data/data_corpus_SCOTUS.rda")
+#load("C:/Users/kevin/Documents/GitHub/BMS_chapter_replication/data/data_corpus_SCOTUS.rda")
+load("C:/Users/kevin/Desktop/data_corpus_SCOTUS.rda")
 
 #drop the ones that are empty
 clean1 <- corpus_subset(data_corpus_SCOTUS, nchar(texts(data_corpus_SCOTUS)) > 0)
@@ -299,7 +306,7 @@ require(reshape2)
 
 
 ###Congress
-load("C:/Users/kevin/Documents/GitHub/BMS_chapter_replication/data/data_corpus_CR.rdata")
+load("C:/Users/kevin/Desktop/data_corpus_CR.rdata")
 
 
 #drop the ones that are by the speaker
@@ -467,3 +474,329 @@ print(p)
 ```
 
 ![](vignette_files/figure-markdown_github/unnamed-chunk-3-5.png)
+
+``` r
+##Figures 4, 6 and 8: Comparative data
+
+
+
+data("data_corpus_SOTU")
+
+
+SOTU_stat <- textstat_readability(data_corpus_SOTU, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+
+SOTU_year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+SOTU_fre_df <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$Flesch)
+SOTU_fre_sent <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanSentenceLength)
+SOTU_fre_word <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanWordSyllables)
+
+########nobel
+#load("data_text/NobelLitePresentations/data_corpus_nobel.rdata")
+load("C:/Users/kevin/Desktop/data_corpus_nobel.rdata")
+
+
+temp_lengths <- stri_length(texts(data_corpus_nobel))
+data_corpus_nobel <- corpus_subset(data_corpus_nobel, temp_lengths < quantile(temp_lengths, prob = .95))
+
+
+nobel_corp <- corpus_trimsentences(data_corpus_nobel, min_length = 4)
+
+
+nobel_lengths<-ntoken(nobel_corp, removePunct = T)
+
+
+
+
+
+
+nobel_stat <- textstat_readability(nobel_corp, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+
+nobel_year <- (docvars(data_corpus_nobel, "year"))
+nobel_fre_df <- data.frame("year" = nobel_year, "nobel_stat" = nobel_stat$Flesch)
+nobel_fre_sent <- data.frame("year" = nobel_year, "nobel_stat" = nobel_stat$meanSentenceLength)
+nobel_fre_word <- data.frame("year" = nobel_year, "nobel_stat" = nobel_stat$meanWordSyllables)
+
+
+
+########Party Broadcasts
+
+data("data_corpus_partybroadcasts")
+temp_lengths <- stri_length(texts(data_corpus_partybroadcasts))
+data_corpus_pb <- corpus_subset(data_corpus_partybroadcasts, temp_lengths < quantile(temp_lengths, prob = .95))
+
+pb_corp <- corpus_trimsentences(data_corpus_pb, min_length = 4)
+
+pb_lengths<-ntoken(pb_corp, removePunct = T)
+
+###need to manually fix the dates
+xx<-substr(texts(pb_corp), 1, 30)
+xxx<-str_extract_all(xx,"\\(?[0-9,.]+\\)?")
+
+
+pb_year <- numeric()
+for(i in 1:length(xxx)){
+  
+  pb_year[i]<- as.numeric((xxx[[i]][length(xxx[[i]])]))
+}
+## Warning: NAs introduced by coercion
+## Warning: NAs introduced by coercion
+
+## Warning: NAs introduced by coercion
+pb_year[4]<-1964
+
+pb_year[10]<-1970
+
+pb_year[14]<-1974
+pb_year[22]<-1979
+
+
+
+pb_stat <- textstat_readability(pb_corp, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+
+
+pb_fre_df <- data.frame("year" = pb_year, "pb_stat" = pb_stat$Flesch)
+pb_fre_sent <- data.frame("year" = pb_year, "pb_stat" = pb_stat$meanSentenceLength)
+pb_fre_word <- data.frame("year" = pb_year, "pb_stat" = pb_stat$meanWordSyllables)
+
+
+
+########UK Manifestos
+
+load("C:/Users/kevin/Desktop/data_corpus_man.rdata")
+
+temp_lengths <- stri_length(texts(data_corpus_man))
+data_corpus_man <- corpus_subset(data_corpus_man, temp_lengths < quantile(temp_lengths, prob = .95))
+
+
+man_corp <- corpus_trimsentences(data_corpus_man, min_length = 4)
+
+
+docvars(data_corpus_man)
+##              Year
+## Con1918.txt  1918
+## Con1922.txt  1922
+## Con1923.txt  1923
+## Con1924.txt  1924
+## Con1929.txt  1929
+## Con1931.txt  1931
+## Con1935.txt  1935
+## Con1945.txt  1945
+## Con1950.txt  1950
+## Con1951.txt  1951
+## Con1955.txt  1955
+## Con1959.txt  1959
+## Con1964.txt  1964
+## Con1966.txt  1966
+## Con1970.txt  1970
+## Con1974a.txt 1974
+## Con1974b.txt 1974
+## Con1979.txt  1979
+## Con1983.txt  1983
+## Con1987.txt  1987
+## Con1997.txt  1997
+## Con2001.txt  2001
+## Con2005.txt  2005
+## Lab1918.txt  1918
+## Lab1922.txt  1922
+## Lab1923.txt  1923
+## Lab1924.txt  1924
+## Lab1929.txt  1929
+## Lab1931.txt  1931
+## Lab1935.txt  1935
+## Lab1945.txt  1945
+## Lab1950.txt  1950
+## Lab1951.txt  1951
+## Lab1955.txt  1955
+## Lab1959.txt  1959
+## Lab1964.txt  1964
+## Lab1966.txt  1966
+## Lab1970.txt  1970
+## Lab1974a.txt 1974
+## Lab1974b.txt 1974
+## Lab1979.txt  1979
+## Lab1987.txt  1987
+## Lab1992.txt  1992
+## Lab1997.txt  1997
+## Lab2001.txt  2001
+## Lab2005.txt  2005
+## Lib1918.txt  1918
+## Lib1922.txt  1922
+## Lib1923.txt  1923
+## Lib1924.txt  1924
+## Lib1929.txt  1929
+## Lib1931.txt  1931
+## Lib1935.txt  1935
+## Lib1945.txt  1945
+## Lib1950.txt  1950
+## Lib1951.txt  1951
+## Lib1955.txt  1955
+## Lib1959.txt  1959
+## Lib1964.txt  1964
+## Lib1966.txt  1966
+## Lib1970.txt  1970
+## Lib1974a.txt 1974
+## Lib1974b.txt 1974
+## Lib1979.txt  1979
+## Lib1983.txt  1983
+## Lib1987.txt  1987
+## Lib1992.txt  1992
+## Lib1997.txt  1997
+## Lib2001.txt  2001
+## Lib2005.txt  2005
+## Lib2010.txt  2010
+
+
+man_stat <- textstat_readability(man_corp, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+
+man_year <- (docvars(data_corpus_man, "Year"))
+man_fre_df <- data.frame("year" = man_year, "man_stat" = man_stat$Flesch)
+man_fre_sent <- data.frame("year" = man_year, "man_stat" = man_stat$meanSentenceLength)
+man_fre_word <- data.frame("year" = man_year, "man_stat" = man_stat$meanWordSyllables)
+
+
+
+##melt together for plotting--Figure 4
+require(reshape2)
+
+
+df_comp<-melt(list(SOTU=SOTU_fre_df, Manifestos=man_fre_df, Broadcasts = pb_fre_df,
+                 Nobel = nobel_fre_df), id.vars="year")
+
+
+
+require(ggplot2)
+
+linez<-c( "F1", "dashed",  "dotdash","solid")
+
+
+p <- ggplot(data = df_comp,
+            aes(x = year, y = value, linetype = L1)) + #, group = delivery)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  geom_smooth(alpha=0.2,  method = "loess", span = .34, color = "black", se = F) +
+  geom_point(alpha=0.01) + 
+  coord_cartesian(ylim = c(15, 70), xlim=c(1900, 2010)) +
+  theme(legend.position="none")+
+  scale_linetype_manual(values = linez)+
+  xlab("") +
+  ylab("Flesch Reading Ease Score") +
+  #geom_line(aes(), alpha=0.3, size = 1) +
+  # ggtitle("Text Complexity in State of the Union Addresses") +
+  theme(plot.title = element_text(lineheight=.8, face="bold")) +
+  annotate("text", label = "SOTU", x = 1995, y = 55, size = 6, colour = "black")+
+  annotate("text", label = "UK Manifestos", x = 1925, y = 30, size = 6, colour = "black") +
+  annotate("text", label = "Party Broadcasts", x = 1955, y = 65, size = 6, colour = "black") + 
+  annotate("text", label = "Nobel Prize", x = 1910, y = 48, size = 6, colour = "black")
+
+
+print(p)
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : pseudoinverse used at 1979
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : neighborhood radius 5
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : reciprocal condition number 7.9715e-017
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : There are other near singularities as well. 16
+```
+
+![](vignette_files/figure-markdown_github/unnamed-chunk-3-6.png)
+
+``` r
+
+
+
+##melt together for plotting--Figure 6
+
+
+
+df_comp_sent<-melt(list(SOTU=SOTU_fre_sent, Manifestos=man_fre_sent, Broadcasts = pb_fre_sent,
+                   Nobel = nobel_fre_sent), id.vars="year")
+
+
+
+linez<-c( "F1", "dashed",  "dotdash","solid")
+
+
+
+p <- ggplot(data = df_comp_sent,
+            aes(x = year, y = value, linetype = L1)) + #, group = delivery)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  geom_smooth(alpha=0.2,  method = "loess", span = .34, color = "black", se = F) +
+  coord_cartesian(ylim = c(15, 35), xlim=c(1900, 2010)) +
+  theme(legend.position="none")+
+  scale_linetype_manual(values = linez)+
+  xlab("") +
+  ylab("Mean Sentence Length") +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15), axis.title.y = element_text(size = 15)) +
+  annotate("text", label = "SOTU", x = 1912, y = 34, size = 6, colour = "black")+
+  annotate("text", label = "UK Manifestos", x = 2005, y = 27, size = 6, colour = "black") +
+  annotate("text", label = "Party Broadcasts", x = 1965, y = 15, size = 6, colour = "black") + 
+  annotate("text", label = "Nobel Prize", x = 1910, y = 26, size = 6, colour = "black")
+
+
+
+print(p)
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : pseudoinverse used at 1979
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : neighborhood radius 5
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : reciprocal condition number 7.9715e-017
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : There are other near singularities as well. 16
+```
+
+![](vignette_files/figure-markdown_github/unnamed-chunk-3-7.png)
+
+``` r
+
+
+##melt together for plotting--Figure 8
+
+
+
+df_comp_word<-melt(list(SOTU=SOTU_fre_word, Manifestos=man_fre_word, Broadcasts = pb_fre_word,
+                        Nobel = nobel_fre_word), id.vars="year")
+
+
+
+p <- ggplot(data = df_comp_word,
+            aes(x = year, y = value, linetype = L1)) + #, group = delivery)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black")) +
+  geom_smooth(alpha=0.2,  method = "loess", span = .34, color = "black", se = F) +
+  coord_cartesian(ylim = c(1.4, 1.75), xlim=c(1900, 2010)) +
+  theme(legend.position="none")+
+  scale_linetype_manual(values = linez)+
+  xlab("") +
+  ylab("Mean Number of Syllables per Word") +
+  theme(axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15), axis.title.y = element_text(size = 15)) +
+  annotate("text", label = "SOTU", x = 1903, y = 1.66, size = 6, colour = "black")+
+  annotate("text", label = "UK Manifestos", x = 1985, y = 1.72, size = 6, colour = "black") +
+  annotate("text", label = "Party Broadcasts", x = 1955, y = 1.45, size = 6, colour = "black") + 
+  annotate("text", label = "Nobel Prize", x = 1910, y = 1.58, size = 6, colour = "black")
+
+
+
+print(p)
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : pseudoinverse used at 1979
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : neighborhood radius 5
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : reciprocal condition number 7.9715e-017
+## Warning in simpleLoess(y, x, w, span, degree = degree, parametric =
+## parametric, : There are other near singularities as well. 16
+```
+
+![](vignette_files/figure-markdown_github/unnamed-chunk-3-8.png)
