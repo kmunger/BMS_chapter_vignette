@@ -31,19 +31,22 @@ devtools::install_github("kbenoit/sophistication")
 library(quanteda)
 library(sophistication)
 library(stringr)
+library(quanteda.corpora)
 ## compute readability and bootstrap the sentences
 set.seed(20170308)
-results <- bootstrap_readability(data_corpus_SOTU, n = 2, measure = "Flesch", verbose = FALSE)
+data(data_corpus_sotu, package = "quanteda.corpora")
+
+results <- bootstrap_readability(data_corpus_sotu, n = 2, measure = "Flesch", verbose = FALSE)
 bs_sd <- results$bs_sd[,"Flesch"]
 stat <- results$original[,"Flesch"]
-year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+year <- lubridate::year(docvars(data_corpus_sotu, "Date"))
 ## calculate statistics for SOTU
 library(trend)
 library(strucchange)
-sotu_mean <- mean(stat)
-sotu_var <- var(stat)
-sotu_cs_test <- cs.test(stat)
-sotu_ts <- as.ts(stat)
+sotu_mean <- mean(stat$Flesch)
+sotu_var <- var(stat$Flesch)
+sotu_cs_test <- cs.test(stat$Flesch)
+sotu_ts <- as.ts(stat$Flesch)
 sotu_breaks <- breakpoints(sotu_ts ~ 1 )
 summary(sotu_breaks)
 
@@ -51,7 +54,7 @@ summary(sotu_breaks)
 
 
 #3 breakpoints best fit the data
-fm0 <- lm(stat ~ breakfactor(sotu_breaks, breaks = 3))
+fm0 <- lm(stat$Flesch ~ breakfactor(sotu_breaks, breaks = 3))
 
 
 
@@ -62,7 +65,7 @@ year_breaks <- year[breakdates(sotu_breaks)]
 
 ## plot the trend
 require(ggplot2)
-p <- ggplot(data = docvars(data_corpus_SOTU),
+p <- ggplot(data = docvars(data_corpus_sotu),
             aes(x = year, y = stat)) + #, group = delivery)) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -95,7 +98,7 @@ levs[2:length(levs)] <- lapply(levs[2:length(levs)], function(x) {
 })
 levels(period) <- sapply(levs, paste, collapse = "-")
 
-ggplot(aes(y = stat, x = period, fill = docvars(data_corpus_SOTU, "delivery")),
+ggplot(aes(y = stat$Flesch, x = period, fill = docvars(data_corpus_sotu, "delivery")),
        data = NULL) +
     geom_boxplot() +
     scale_fill_grey("", start = .6, end = .9) +
@@ -118,12 +121,12 @@ library(stringi)
 library(magrittr)
 library(dplyr)
 
-data("data_corpus_SOTU")
+data("data_corpus_sotu")
 
 
-SOTU_stat <- textstat_readability(data_corpus_SOTU, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+SOTU_stat <- textstat_readability(data_corpus_sotu, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
 
-SOTU_year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+SOTU_year <- lubridate::year(docvars(data_corpus_sotu, "Date"))
 SOTU_fre_df <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$Flesch)
 SOTU_fre_sent <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanSentenceLength)
 SOTU_fre_word <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanWordSyllables)
@@ -388,12 +391,12 @@ print(p)
 
 
 
-data("data_corpus_SOTU")
+data("data_corpus_sotu")
 
 
-SOTU_stat <- textstat_readability(data_corpus_SOTU, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+SOTU_stat <- textstat_readability(data_corpus_sotu, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
 
-SOTU_year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+SOTU_year <- lubridate::year(docvars(data_corpus_sotu, "Date"))
 SOTU_fre_df <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$Flesch)
 SOTU_fre_sent <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanSentenceLength)
 SOTU_fre_word <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanWordSyllables)

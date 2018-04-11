@@ -21,35 +21,33 @@ devtools::install_github("kbenoit/sophistication")
 
 ``` r
 library(quanteda)
-## Warning: package 'quanteda' was built under R version 3.4.3
-## quanteda version 0.99.22
-## Using 7 of 8 threads for parallel computing
+## Package version: 1.1.1
+## Parallel computing: 2 of 8 threads used.
+## See https://quanteda.io for tutorials and examples.
 ## 
 ## Attaching package: 'quanteda'
 ## The following object is masked from 'package:utils':
 ## 
 ##     View
 library(sophistication)
-## Warning: replacing previous import 'quanteda::coef' by 'stats::coef' when
-## loading 'sophistication'
-## sophistication version 0.57
+## sophistication version 0.65
 ## Dropbox folder location set to: C:/Users/kevin/Dropbox/Benoit_Spirling_Readability/
 library(stringr)
+library(quanteda.corpora)
 ## compute readability and bootstrap the sentences
 set.seed(20170308)
-results <- bootstrap_readability(data_corpus_SOTU, n = 2, measure = "Flesch", verbose = FALSE)
+data(data_corpus_sotu, package = "quanteda.corpora")
+
+results <- bootstrap_readability(data_corpus_sotu, n = 2, measure = "Flesch", verbose = FALSE)
 ## 1
 ##  2
 bs_sd <- results$bs_sd[,"Flesch"]
 stat <- results$original[,"Flesch"]
-year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+year <- lubridate::year(docvars(data_corpus_sotu, "Date"))
 ## calculate statistics for SOTU
 library(trend)
-## Warning: package 'trend' was built under R version 3.4.3
 library(strucchange)
-## Warning: package 'strucchange' was built under R version 3.4.3
 ## Loading required package: zoo
-## Warning: package 'zoo' was built under R version 3.4.3
 ## 
 ## Attaching package: 'zoo'
 ## 
@@ -58,17 +56,16 @@ library(strucchange)
 ##     as.Date, as.Date.numeric
 ## 
 ## Loading required package: sandwich
-## Warning: package 'sandwich' was built under R version 3.4.3
 ## 
 ## Attaching package: 'strucchange'
 ## 
 ## The following object is masked from 'package:stringr':
 ## 
 ##     boundary
-sotu_mean <- mean(stat)
-sotu_var <- var(stat)
-sotu_cs_test <- cs.test(stat)
-sotu_ts <- as.ts(stat)
+sotu_mean <- mean(stat$Flesch)
+sotu_var <- var(stat$Flesch)
+sotu_cs_test <- cs.test(stat$Flesch)
+sotu_ts <- as.ts(stat$Flesch)
 sotu_breaks <- breakpoints(sotu_ts ~ 1 )
 summary(sotu_breaks)
 ## 
@@ -96,14 +93,14 @@ summary(sotu_breaks)
 ## Fit:
 ##                                        
 ## m   0     1     2     3     4     5    
-## RSS 39231 14644 11505  9704  9249  9215
-## BIC  1846  1630  1585  1557  1557  1567
+## RSS 40144 14775 11547  9719  9264  9230
+## BIC  1865  1644  1598  1569  1568  1578
 
 
 
 
 #3 breakpoints best fit the data
-fm0 <- lm(stat ~ breakfactor(sotu_breaks, breaks = 3))
+fm0 <- lm(stat$Flesch ~ breakfactor(sotu_breaks, breaks = 3))
 
 
 
@@ -115,8 +112,7 @@ year_breaks <- year[breakdates(sotu_breaks)]
 ## plot the trend
 require(ggplot2)
 ## Loading required package: ggplot2
-## Warning: package 'ggplot2' was built under R version 3.4.2
-p <- ggplot(data = docvars(data_corpus_SOTU),
+p <- ggplot(data = docvars(data_corpus_sotu),
             aes(x = year, y = stat)) + #, group = delivery)) +
   theme(panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -134,6 +130,7 @@ p <- ggplot(data = docvars(data_corpus_SOTU),
         axis.text.x = element_text(size = 15),
         axis.text.y = element_text(size = 15), axis.title.y = element_text(size = 15))
 print(p)
+## Don't know how to automatically pick scale for object of type data.frame. Defaulting to continuous.
 ```
 
 ![](vignette_files/figure-markdown_github/unnamed-chunk-3-1.png)
@@ -154,7 +151,7 @@ levs[2:length(levs)] <- lapply(levs[2:length(levs)], function(x) {
 })
 levels(period) <- sapply(levs, paste, collapse = "-")
 
-ggplot(aes(y = stat, x = period, fill = docvars(data_corpus_SOTU, "delivery")),
+ggplot(aes(y = stat$Flesch, x = period, fill = docvars(data_corpus_sotu, "delivery")),
        data = NULL) +
     geom_boxplot() +
     scale_fill_grey("", start = .6, end = .9) +
@@ -179,7 +176,7 @@ ggplot(aes(y = stat, x = period, fill = docvars(data_corpus_SOTU, "delivery")),
 library(sophistication)
 library(quanteda)
 library(stringi)
-## Warning: package 'stringi' was built under R version 3.4.2
+## Warning: package 'stringi' was built under R version 3.4.4
 library(magrittr)
 library(dplyr)
 ## 
@@ -193,12 +190,12 @@ library(dplyr)
 ## 
 ##     intersect, setdiff, setequal, union
 
-data("data_corpus_SOTU")
+data("data_corpus_sotu")
 
 
-SOTU_stat <- textstat_readability(data_corpus_SOTU, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+SOTU_stat <- textstat_readability(data_corpus_sotu, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
 
-SOTU_year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+SOTU_year <- lubridate::year(docvars(data_corpus_sotu, "Date"))
 SOTU_fre_df <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$Flesch)
 SOTU_fre_sent <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanSentenceLength)
 SOTU_fre_word <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanWordSyllables)
@@ -302,7 +299,6 @@ balanced_scotus_fre_word<-scotus_fre_word[indices,]
 
 require(reshape2)
 ## Loading required package: reshape2
-## Warning: package 'reshape2' was built under R version 3.4.3
 
 
 ###Congress
@@ -480,12 +476,12 @@ print(p)
 
 
 
-data("data_corpus_SOTU")
+data("data_corpus_sotu")
 
 
-SOTU_stat <- textstat_readability(data_corpus_SOTU, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
+SOTU_stat <- textstat_readability(data_corpus_sotu, measure = c("Flesch", "meanSentenceLength", "meanWordSyllables"))
 
-SOTU_year <- lubridate::year(docvars(data_corpus_SOTU, "Date"))
+SOTU_year <- lubridate::year(docvars(data_corpus_sotu, "Date"))
 SOTU_fre_df <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$Flesch)
 SOTU_fre_sent <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanSentenceLength)
 SOTU_fre_word <- data.frame("year" = SOTU_year, "SOTU_stat" = SOTU_stat$meanWordSyllables)
